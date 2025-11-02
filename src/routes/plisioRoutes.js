@@ -4,7 +4,7 @@ const plisioController = require("../controllers/plisioController")
 const router = express.Router()
 
 // Routes
-router.get("/currencies", plisioController.getCurrencies)
+router.get("/", plisioController.getCurrencies)
 
 module.exports = router
 

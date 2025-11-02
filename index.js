@@ -19,7 +19,7 @@ const port = process.env.PORT || 5000
 // Determine default frontend URL based on environment
 const isDevelopment = process.env.NODE_ENV === 'development'
 const defaultFrontendUrl = isDevelopment 
-  "https://meme-ai-delta.vercel.app"
+    "https://meme-ai-delta.vercel.app"
 
 // Parse allowed origins from environment variable (comma-separated)
 const frontendUrlEnv = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || defaultFrontendUrl
@@ -160,7 +160,7 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/ai-token", aiTokenRoutes)
-app.use("/api/plisio", plisioRoutes)
+app.use("/api/currencies", plisioRoutes)
 
 // Start server after migrations
 async function startServer() {
