@@ -1,3 +1,6 @@
+// Load environment variables from .env file (for local development)
+require('dotenv').config()
+
 const { exec } = require("child_process");
 const { promisify } = require("util");
 

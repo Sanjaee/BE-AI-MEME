@@ -1,3 +1,7 @@
+// Load environment variables from .env file (for local development)
+// Note: In Docker, environment variables are loaded automatically from docker-compose.yml
+require('dotenv').config()
+
 const express = require("express")
 const cors = require("cors")
 const { exec } = require("child_process")
@@ -9,9 +13,7 @@ const app = express()
 const port = process.env.PORT || 5000
 
 // CORS configuration - only allow specific frontend domain
-// Note: In Docker, environment variables are loaded automatically from docker-compose.yml
-// For local development without Docker, use .env file with dotenv
-
+// Environment variables are loaded from .env (local) or docker-compose.yml (Docker)
 const allowedOrigin = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"
 
 const corsOptions = {

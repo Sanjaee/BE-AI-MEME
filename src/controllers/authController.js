@@ -1,3 +1,6 @@
+// Load environment variables from .env file (for local development)
+require('dotenv').config()
+
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
