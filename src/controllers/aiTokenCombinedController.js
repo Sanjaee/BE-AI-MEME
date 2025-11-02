@@ -239,18 +239,6 @@ const aiTokenCombinedController = {
           }
           
           if (tokensToAdd.length > 0) {
-            // Normalize snipersHoldPercent untuk setiap token (maksimal 3.323437761849493)
-            const MAX_SNIPERS_HOLD_PERCENT = 3.323437761849493;
-            tokensToAdd = tokensToAdd.map(token => {
-              if (token && typeof token.snipersHoldPercent === 'number' && token.snipersHoldPercent > MAX_SNIPERS_HOLD_PERCENT) {
-                return {
-                  ...token,
-                  snipersHoldPercent: MAX_SNIPERS_HOLD_PERCENT
-                };
-              }
-              return token;
-            });
-            
             console.log(`✅ Successfully fetched ${tokensToAdd.length} tokens from ${result.table}`);
             combinedData.push(...tokensToAdd);
           } else {
