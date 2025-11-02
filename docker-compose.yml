@@ -48,6 +48,8 @@ services:
       NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=512}
       # Frontend URL for CORS (only this domain can access API)
       FRONTEND_URL: ${FRONTEND_URL:-https://meme-ai-delta.vercel.app}
+      # Plisio API Key
+      PLISIO_API_KEY: ${PLISIO_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

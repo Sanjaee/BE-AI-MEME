@@ -16,8 +16,13 @@ const port = process.env.PORT || 5000
 // Environment variables are loaded from .env (local) or docker-compose.yml (Docker)
 // Support multiple origins: local development and production
 
+// Determine default frontend URL based on environment
+const isDevelopment = process.env.NODE_ENV === 'development'
+const defaultFrontendUrl = isDevelopment 
+  "https://meme-ai-delta.vercel.app"
+
 // Parse allowed origins from environment variable (comma-separated)
-const frontendUrlEnv = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || "https://meme-ai-delta.vercel.app"
+const frontendUrlEnv = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || defaultFrontendUrl
 const allowedOrigins = frontendUrlEnv.split(',').map(url => url.trim()).filter(url => url.length > 0)
 
 // Default allowed origins (add production domain here if needed)
@@ -146,6 +151,7 @@ async function runMigrations() {
 // Import routes
 const aiTokenRoutes = require("./src/routes/aiTokenRoutes.js")
 const authRoutes = require("./src/routes/authRoutes.js")
+const plisioRoutes = require("./src/routes/plisioRoutes.js")
 
 app.get("/", (req, res) => {
     res.send("Letscode!")
@@ -154,6 +160,7 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/ai-token", aiTokenRoutes)
+app.use("/api/plisio", plisioRoutes)
 
 // Start server after migrations
 async function startServer() {
