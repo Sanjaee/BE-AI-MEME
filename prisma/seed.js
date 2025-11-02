@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client'
-
+const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
@@ -21,6 +21,29 @@ async function main() {
     console.log('✅ Dummy token created:', token)
   } else {
     console.log('ℹ️  Token dengan ID 1 sudah ada, skip creating')
+  }
+
+  // Create default admin jika belum ada
+  const existingAdmin = await prisma.admin.findUnique({
+    where: { username: 'admin' }
+  })
+
+  if (!existingAdmin) {
+    // Hash password: admin123 (default password)
+    const hashedPassword = await bcrypt.hash('admin123', 10)
+    
+    const admin = await prisma.admin.create({
+      data: {
+        username: 'admin',
+        email: 'admin@mem.ai',
+        password: hashedPassword,
+        role: 'admin'
+      }
+    })
+    console.log('✅ Default admin created:', { username: admin.username, email: admin.email })
+    console.log('⚠️  Default password: admin123 - Please change after first login!')
+  } else {
+    console.log('ℹ️  Admin dengan username "admin" sudah ada, skip creating')
   }
 
   console.log('✅ Seeding completed!')

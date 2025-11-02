@@ -1,12 +1,12 @@
-import express from "express"
-import cors from "cors"
-import { exec } from "child_process"
-import { promisify } from "util"
+const express = require("express")
+const cors = require("cors")
+const { exec } = require("child_process")
+const { promisify } = require("util")
 
 const execAsync = promisify(exec)
 
 const app = express()
-const port = 5000
+const port = process.env.PORT || 5000
 
 app.use(cors())
 app.use(express.json())
@@ -31,13 +31,15 @@ async function runMigrations() {
 }
 
 // Import routes
-import aiTokenRoutes from "./src/routes/aiTokenRoutes.js"
+const aiTokenRoutes = require("./src/routes/aiTokenRoutes.js")
+const authRoutes = require("./src/routes/authRoutes.js")
 
 app.get("/", (req, res) => {
     res.send("Letscode!")
 })
 
 // Routes
+app.use("/api/auth", authRoutes)
 app.use("/api/ai-token", aiTokenRoutes)
 
 // Start server after migrations

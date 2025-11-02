@@ -2,21 +2,76 @@ version: "3.8"
 services:
   db:
     image: postgres:15-alpine
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: memeai
-      POSTGRES_PASSWORD: memeai
-      POSTGRES_DB: memedb
+      POSTGRES_USER: ${POSTGRES_USER:-memeai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-memeai}
+      POSTGRES_DB: ${POSTGRES_DB:-memedb}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U memeai -d memedb"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-memeai} -d ${POSTGRES_DB:-memedb}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    # Memory limits - allows swap when under heavy load
+    mem_limit: ${DB_MEMORY_LIMIT:-512m}
+    memswap_limit: ${DB_MEMSWAP_LIMIT:-1g}
+    # Note: mem_swappiness is Linux-only, removed for Windows compatibility
+    # OOM kill prevention - container stays running but uses swap
+    oom_kill_disable: false
+    oom_score_adj: 500
+    networks:
+      - mem-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      # Database Configuration
+      DATABASE_URL: postgresql://${POSTGRES_USER:-memeai}:${POSTGRES_PASSWORD:-memeai}@db:5432/${POSTGRES_DB:-memedb}
+      POSTGRES_USER: ${POSTGRES_USER:-memeai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-memeai}
+      POSTGRES_DB: ${POSTGRES_DB:-memedb}
+      # Backend Configuration
+      PORT: ${PORT:-5000}
+      NODE_ENV: ${NODE_ENV:-production}
+      # Node.js memory optimization - limit heap size to compress unused memory
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=512}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    # Memory limits - allows swap when under heavy load
+    mem_limit: ${BACKEND_MEMORY_LIMIT:-1g}
+    memswap_limit: ${BACKEND_MEMSWAP_LIMIT:-2g}
+    # Note: mem_swappiness is Linux-only, removed for Windows compatibility
+    # OOM kill prevention - container stays running but uses swap
+    oom_kill_disable: false
+    oom_score_adj: 300
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:${PORT:-5000}/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mem-network
 
 volumes:
   pgdata:
+
+networks:
+  mem-network:
+    driver: bridge

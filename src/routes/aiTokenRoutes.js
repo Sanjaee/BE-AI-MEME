@@ -1,7 +1,5 @@
-import express from "express";
-import { createRequire } from "module";
+const express = require("express");
 
-const require = createRequire(import.meta.url);
 const aiTokenCombinedController = require("../controllers/aiTokenCombinedController.js");
 const aiTokenNewPairsController = require("../controllers/aiTokenNewPairsController.js");
 const aiTokenFinalStretchController = require("../controllers/aiTokenFinalStretchController.js");
@@ -21,4 +19,4 @@ router.get("/migrated", aiTokenMigratedController.getMigratedData);
 router.get("/token", aiTokenCombinedController.getToken); // Get token yang sudah disensor
 router.post("/update", aiTokenCombinedController.updateToken);
 
-export default router;
+module.exports = router;

@@ -19,3 +19,13 @@ model Token {
   authRefreshToken String
   updatedAt        DateTime @updatedAt
 }
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

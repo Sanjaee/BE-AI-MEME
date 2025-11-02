@@ -19,6 +19,8 @@ const aiTokenCombinedController = {
   // ✅ API: Gabungkan data dari newPairs, finalStretch, dan migrated
   getCombinedData: async (req, res) => {
     try {
+      // Handle query parameter t (timestamp) untuk cache busting jika ada
+      const timestamp = req.query.t || Date.now();
       // Ambil token dari database
       const admin = await prisma.token.findFirst({
         select: {
@@ -239,18 +241,14 @@ const aiTokenCombinedController = {
           }
           
           if (tokensToAdd.length > 0) {
-            console.log(`✅ Successfully fetched ${tokensToAdd.length} tokens from ${result.table}`);
             combinedData.push(...tokensToAdd);
-          } else {
-            console.log(`⚠️ No tokens found in ${result.table} response`);
           }
         }
       });
-      
-      console.log(`📊 Total combined tokens: ${combinedData.length}`);
 
       return res.status(200).json({
         success: true,
+        timestamp: timestamp,
         summary: {
           total: results.length,
           successful: successful.length,
