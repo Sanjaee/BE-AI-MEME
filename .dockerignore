@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+.DS_Store
+*.log
+README.md
+init-db.ps1
+migrate.js
+.dockerignore
