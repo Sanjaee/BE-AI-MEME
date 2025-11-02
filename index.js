@@ -12,9 +12,23 @@ const execAsync = promisify(exec)
 const app = express()
 const port = process.env.PORT || 5000
 
-// CORS configuration - only allow specific frontend domain
+// CORS configuration - allow specific frontend domains
 // Environment variables are loaded from .env (local) or docker-compose.yml (Docker)
-const allowedOrigin = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"
+// Support multiple origins: local development and production
+
+// Parse allowed origins from environment variable (comma-separated)
+const frontendUrlEnv = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || "https://meme-ai-delta.vercel.app"
+const allowedOrigins = frontendUrlEnv.split(',').map(url => url.trim()).filter(url => url.length > 0)
+
+// Default allowed origins (add production domain here if needed)
+const defaultOrigins = [
+  "https://meme-ai-delta.vercel.app"
+]
+
+// Combine and deduplicate origins
+const allAllowedOrigins = [...new Set([...defaultOrigins, ...allowedOrigins])]
+
+console.log(`🔒 CORS configured for allowed origins: ${allAllowedOrigins.join(', ')}`)
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -24,10 +38,11 @@ const corsOptions = {
       return callback(null, true)
     }
     
-    // Only allow specific frontend origin
-    if (origin === allowedOrigin) {
+    // Check if origin is in allowed list
+    if (allAllowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
+      console.warn(`⚠️  CORS blocked origin: ${origin}. Allowed: ${allAllowedOrigins.join(', ')}`)
       callback(new Error('CORS policy: Origin not allowed'), false)
     }
   },
@@ -59,15 +74,15 @@ const blockDirectAccess = (req, res, next) => {
     return res.status(403).send('Access Denied')
   }
   
-  // Block if origin doesn't match allowed origin
-  if (origin && origin !== allowedOrigin) {
+  // Block if origin doesn't match allowed origins
+  if (origin && !allAllowedOrigins.includes(origin)) {
     return res.status(403).send('Access Denied')
   }
   
-  // Block direct browser access - must have origin matching allowed origin
+  // Block direct browser access - must have origin matching allowed origins
   // But allow if it's an OPTIONS request (CORS preflight)
   if (req.method !== 'OPTIONS') {
-    if (!origin || origin !== allowedOrigin) {
+    if (!origin || !allAllowedOrigins.includes(origin)) {
       return res.status(403).send('Access Denied')
     }
   }
