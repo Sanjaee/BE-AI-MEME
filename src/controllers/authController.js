@@ -41,6 +41,7 @@ const authController = {
       const { username, password } = req.body;
 
       if (!username || !password) {
+        console.error("❌ Login failed: Username or password missing")
         return res.status(400).json({
           success: false,
           message: "Username and password are required",
@@ -58,6 +59,7 @@ const authController = {
       });
 
       if (!admin) {
+        console.error(`❌ Login failed: Admin not found for username/email: ${username}`)
         return res.status(401).json({
           success: false,
           message: "Invalid credentials",
@@ -68,6 +70,7 @@ const authController = {
       const isValidPassword = await bcrypt.compare(password, admin.password);
 
       if (!isValidPassword) {
+        console.error(`❌ Login failed: Invalid password for username/email: ${username}`)
         return res.status(401).json({
           success: false,
           message: "Invalid credentials",

@@ -8,8 +8,104 @@ const execAsync = promisify(exec)
 const app = express()
 const port = process.env.PORT || 5000
 
-app.use(cors())
+// CORS configuration - only allow specific frontend domain
+// Note: In Docker, environment variables are loaded automatically from docker-compose.yml
+// For local development without Docker, use .env file with dotenv
+
+const allowedOrigin = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (same-origin requests or preflight)
+    // This is needed for CORS preflight OPTIONS requests
+    if (!origin) {
+      return callback(null, true)
+    }
+    
+    // Only allow specific frontend origin
+    if (origin === allowedOrigin) {
+      callback(null, true)
+    } else {
+      callback(new Error('CORS policy: Origin not allowed'), false)
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control']
+}
+
+app.use(cors(corsOptions))
+
+// Middleware to block direct browser access and Postman
+const blockDirectAccess = (req, res, next) => {
+  const userAgent = req.get('user-agent') || ''
+  const referer = req.get('referer') || req.get('referrer') || ''
+  const origin = req.get('origin')
+  
+  // Block Postman, Insomnia, Thunder Client, curl, and other API testing tools
+  if (
+    userAgent.includes('Postman') || 
+    userAgent.includes('insomnia') || 
+    userAgent.includes('Thunder Client') ||
+    userAgent.includes('curl/') ||
+    userAgent.includes('HTTPie') ||
+    userAgent.includes('RestClient') ||
+    userAgent === '' ||
+    !userAgent
+  ) {
+    return res.status(403).send('Access Denied')
+  }
+  
+  // Block if origin doesn't match allowed origin
+  if (origin && origin !== allowedOrigin) {
+    return res.status(403).send('Access Denied')
+  }
+  
+  // Block direct browser access - must have origin matching allowed origin
+  // But allow if it's an OPTIONS request (CORS preflight)
+  if (req.method !== 'OPTIONS') {
+    if (!origin || origin !== allowedOrigin) {
+      return res.status(403).send('Access Denied')
+    }
+  }
+  
+  next()
+}
+
 app.use(express.json())
+
+// Apply blocking middleware to all API routes except health check and auth
+app.use((req, res, next) => {
+  // Allow root path (health check)
+  if (req.path === '/') {
+    return next()
+  }
+  // Allow OPTIONS requests (CORS preflight)
+  if (req.method === 'OPTIONS') {
+    return next()
+  }
+  // Allow auth routes without strict origin check (server-to-server from NextAuth)
+  // Auth routes will still be protected by CORS policy
+  if (req.path.startsWith('/api/auth')) {
+    // Only block known API testing tools
+    const userAgent = req.get('user-agent') || ''
+    if (
+      userAgent.includes('Postman') || 
+      userAgent.includes('insomnia') || 
+      userAgent.includes('Thunder Client') ||
+      userAgent.includes('curl/') ||
+      userAgent.includes('HTTPie') ||
+      userAgent.includes('RestClient')
+    ) {
+      return res.status(403).send('Access Denied')
+    }
+    // Allow auth routes to proceed (CORS will still filter based on origin)
+    return next()
+  }
+  // Apply block middleware to all other routes
+  blockDirectAccess(req, res, next)
+})
 
 // Run Prisma migrations on startup
 async function runMigrations() {

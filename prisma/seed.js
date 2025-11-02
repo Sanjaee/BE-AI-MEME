@@ -30,7 +30,7 @@ async function main() {
 
   if (!existingAdmin) {
     // Hash password: admin123 (default password)
-    const hashedPassword = await bcrypt.hash('admin123', 10)
+    const hashedPassword = await bcrypt.hash('2MKh5LSEYXTCS9dH87kKrLmFfo2Ft62SXQt3OeGFc8sEjyrYbqcoL9QHqrC8fjIvxUJYSIv903fZoXTeS6KyBgAqKeqQeMyAPfaywyA0P4gjXlLQhPLyDVbhQJ', 10)
     
     const admin = await prisma.admin.create({
       data: {

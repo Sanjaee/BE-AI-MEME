@@ -46,6 +46,8 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       # Node.js memory optimization - limit heap size to compress unused memory
       NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=512}
+      # Frontend URL for CORS (only this domain can access API)
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy
