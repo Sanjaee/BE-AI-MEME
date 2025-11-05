@@ -47,6 +47,8 @@ const corsOptions = {
     if (allAllowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
+      // For ai-chat routes, be more permissive (allow all origins for public API)
+      // This will be handled by route-specific middleware
       console.warn(`⚠️  CORS blocked origin: ${origin}. Allowed: ${allAllowedOrigins.join(', ')}`)
       callback(new Error('CORS policy: Origin not allowed'), false)
     }
@@ -57,7 +59,24 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control']
 }
 
-app.use(cors(corsOptions))
+// CORS options for public routes (ai-chat)
+const publicCorsOptions = {
+  origin: true, // Allow all origins for public routes
+  credentials: false,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control']
+}
+
+// Apply CORS middleware - but ai-chat will use manual headers
+app.use((req, res, next) => {
+  // For ai-chat routes, use permissive CORS
+  if (req.path.startsWith('/api/ai-chat')) {
+    return cors(publicCorsOptions)(req, res, next)
+  }
+  // For other routes, use standard CORS
+  return cors(corsOptions)(req, res, next)
+})
 
 // Middleware to block direct browser access and Postman
 const blockDirectAccess = (req, res, next) => {
@@ -103,10 +122,31 @@ app.use((req, res, next) => {
   if (req.path === '/') {
     return next()
   }
-  // Allow OPTIONS requests (CORS preflight)
+  
+  // Allow ai-chat routes as public (no auth required) - handle first
+  // Only block known API testing tools, CORS already handled by middleware above
+  if (req.path.startsWith('/api/ai-chat')) {
+    const userAgent = req.get('user-agent') || ''
+    if (
+      userAgent.includes('Postman') || 
+      userAgent.includes('insomnia') || 
+      userAgent.includes('Thunder Client') ||
+      userAgent.includes('curl/') ||
+      userAgent.includes('HTTPie') ||
+      userAgent.includes('RestClient')
+    ) {
+      return res.status(403).send('Access Denied')
+    }
+    // Allow ai-chat routes to proceed (public, no auth required)
+    // CORS headers already set by cors middleware above
+    return next()
+  }
+  
+  // Allow OPTIONS requests (CORS preflight) for other routes
   if (req.method === 'OPTIONS') {
     return next()
   }
+  
   // Allow auth routes without strict origin check (server-to-server from NextAuth)
   // Auth routes will still be protected by CORS policy
   if (req.path.startsWith('/api/auth')) {
@@ -123,23 +163,6 @@ app.use((req, res, next) => {
       return res.status(403).send('Access Denied')
     }
     // Allow auth routes to proceed (CORS will still filter based on origin)
-    return next()
-  }
-  // Allow ai-chat routes as public (no auth required)
-  // Only block known API testing tools, CORS will still filter based on origin
-  if (req.path.startsWith('/api/ai-chat')) {
-    const userAgent = req.get('user-agent') || ''
-    if (
-      userAgent.includes('Postman') || 
-      userAgent.includes('insomnia') || 
-      userAgent.includes('Thunder Client') ||
-      userAgent.includes('curl/') ||
-      userAgent.includes('HTTPie') ||
-      userAgent.includes('RestClient')
-    ) {
-      return res.status(403).send('Access Denied')
-    }
-    // Allow ai-chat routes to proceed (public, no auth required)
     return next()
   }
   // Apply block middleware to all other routes
