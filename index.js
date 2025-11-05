@@ -125,6 +125,23 @@ app.use((req, res, next) => {
     // Allow auth routes to proceed (CORS will still filter based on origin)
     return next()
   }
+  // Allow ai-chat routes as public (no auth required)
+  // Only block known API testing tools, CORS will still filter based on origin
+  if (req.path.startsWith('/api/ai-chat')) {
+    const userAgent = req.get('user-agent') || ''
+    if (
+      userAgent.includes('Postman') || 
+      userAgent.includes('insomnia') || 
+      userAgent.includes('Thunder Client') ||
+      userAgent.includes('curl/') ||
+      userAgent.includes('HTTPie') ||
+      userAgent.includes('RestClient')
+    ) {
+      return res.status(403).send('Access Denied')
+    }
+    // Allow ai-chat routes to proceed (public, no auth required)
+    return next()
+  }
   // Apply block middleware to all other routes
   blockDirectAccess(req, res, next)
 })
@@ -155,7 +172,7 @@ const plisioRoutes = require("./src/routes/plisioRoutes.js")
 const aiChatRoutes = require("./src/routes/aiChatRoutes.js")
 
 app.get("/", (req, res) => {
-    res.send("Letscode!")
+    res.send("Access Denied")
 })
 
 // Routes
