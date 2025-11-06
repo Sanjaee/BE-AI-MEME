@@ -49,6 +49,27 @@ async function main() {
     console.log('ℹ️  Admin dengan username "admin" sudah ada, skip creating')
   }
 
+  // Create OpenRouter API Key dengan ID 1 jika belum ada
+  const existingApiKey = await prisma.openRouterApiKey.findUnique({
+    where: { id: 1 }
+  })
+
+  if (!existingApiKey) {
+    // Gunakan API key dari environment variable atau dummy key
+    const defaultApiKey = process.env.OPENROUTER_API_KEY || 'dummy_openrouter_api_key'
+    
+    const apiKey = await prisma.openRouterApiKey.create({
+      data: {
+        id: 1,
+        apiKey: defaultApiKey
+      }
+    })
+    console.log('✅ OpenRouter API Key dengan ID 1 created')
+    console.log('⚠️  Using default/dummy API key - Please update via admin panel!')
+  } else {
+    console.log('ℹ️  OpenRouter API Key dengan ID 1 sudah ada, skip creating')
+  }
+
   console.log('✅ Seeding completed!')
 }
 

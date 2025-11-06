@@ -15,4 +15,7 @@ docker-compose up --build -d backend
 echo "🗄️ [5/5] Running Prisma DB Push..."
 docker exec -it meme_backend_1 npx prisma db push
 
+echo "🗄️ [6/6] Running Prisma DB Seed..."
+docker exec -it meme_backend_1 npm run seed
+
 echo "✅ Deploy finished successfully!"

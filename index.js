@@ -71,9 +71,7 @@ const publicCorsOptions = {
 // Apply CORS middleware - but ai-chat will use manual headers
 app.use((req, res, next) => {
   // For ai-chat routes, use permissive CORS
-  if (req.path.startsWith('/api/ai-chat')) {
-    return cors(publicCorsOptions)(req, res, next)
-  }
+ 
   // For other routes, use standard CORS
   return cors(corsOptions)(req, res, next)
 })
@@ -127,6 +125,11 @@ app.use((req, res, next) => {
   // Only block known API testing tools, CORS already handled by middleware above
   if (req.path.startsWith('/api/ai-chat')) {
     const userAgent = req.get('user-agent') || ''
+    const origin = req.get('origin') || 'none'
+    
+    // Debug logging
+    console.log(`🤖 AI Chat: ${req.method} ${req.path} - Origin: ${origin} - UA: ${userAgent.substring(0, 50)}`)
+    
     if (
       userAgent.includes('Postman') || 
       userAgent.includes('insomnia') || 
@@ -135,10 +138,12 @@ app.use((req, res, next) => {
       userAgent.includes('HTTPie') ||
       userAgent.includes('RestClient')
     ) {
+      console.log(`❌ Blocked AI Chat request from API tool: ${userAgent}`)
       return res.status(403).send('Access Denied')
     }
     // Allow ai-chat routes to proceed (public, no auth required)
     // CORS headers already set by cors middleware above
+    console.log(`✅ Allowing AI Chat request`)
     return next()
   }
   
@@ -193,6 +198,7 @@ const aiTokenRoutes = require("./src/routes/aiTokenRoutes.js")
 const authRoutes = require("./src/routes/authRoutes.js")
 const plisioRoutes = require("./src/routes/plisioRoutes.js")
 const aiChatRoutes = require("./src/routes/aiChatRoutes.js")
+const openRouterRoutes = require("./src/routes/openRouterRoutes.js")
 
 app.get("/", (req, res) => {
     res.send("Access Denied")
@@ -203,6 +209,7 @@ app.use("/api/auth", authRoutes)
 app.use("/api/ai-token", aiTokenRoutes)
 app.use("/api/currencies", plisioRoutes)
 app.use("/api/ai-chat", aiChatRoutes)
+app.use("/api/openrouter", openRouterRoutes)
 
 // Start server after migrations
 async function startServer() {
