@@ -247,6 +247,24 @@ const aiTokenCombinedController = {
         }
       });
 
+      // Filter berdasarkan kriteria:
+      // 1. Top 10 Holders <= 20%
+      // 2. Total Holders >= 100
+      const filteredData = combinedData.filter((token) => {
+        // Check top10HoldersPercent
+        const top10Holders = token.top10HoldersPercent || 
+                            token.top10Holders || 
+                            0;
+        
+        // Check numHolders
+        const holders = token.numHolders || 
+                       token.holders || 
+                       0;
+        
+        // Filter: top10Holders <= 20% AND holders >= 100
+        return top10Holders <= 20 && holders >= 100;
+      });
+
       return res.status(200).json({
         success: true,
         timestamp: timestamp,
@@ -254,9 +272,10 @@ const aiTokenCombinedController = {
           total: results.length,
           successful: successful.length,
           failed: failed.length,
-          combinedItems: combinedData.length
+          combinedItems: combinedData.length,
+          filteredItems: filteredData.length
         },
-        data: combinedData,
+        data: filteredData,
         errors: failed.length > 0 ? failed.map((f) => ({ table: f.table, error: f.error })) : null
       });
     } catch (error) {
