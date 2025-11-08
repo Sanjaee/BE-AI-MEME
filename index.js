@@ -195,6 +195,7 @@ async function runMigrations() {
 
 // Import routes
 const aiTokenRoutes = require("./src/routes/aiTokenRoutes.js")
+const aiTokenBnbRoutes = require("./src/routes/aiTokenBnbRoutes.js")
 const authRoutes = require("./src/routes/authRoutes.js")
 const plisioRoutes = require("./src/routes/plisioRoutes.js")
 const aiChatRoutes = require("./src/routes/aiChatRoutes.js")
@@ -207,6 +208,7 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/ai-token", aiTokenRoutes)
+app.use("/api/ai-token-bnb", aiTokenBnbRoutes)
 app.use("/api/currencies", plisioRoutes)
 app.use("/api/ai-chat", aiChatRoutes)
 app.use("/api/openrouter", openRouterRoutes)
