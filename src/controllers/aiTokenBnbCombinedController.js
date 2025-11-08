@@ -34,12 +34,110 @@ const aiTokenBnbCombinedController = {
         Cookie: `auth-access-token=${authAccessToken}; auth-refresh-token=${authRefreshToken}`
       };
 
-      // Request configurations untuk newPairs BNB
+      // Request configurations untuk newPairs, finalStretch, dan migrated BNB
       const requests = [
         {
           name: "newPairs",
           body: {
             table: "newPairs",
+            filters: {
+              age: { min: null, max: null },
+              atLeastOneSocial: false,
+              bondingCurve: { min: null, max: null },
+              devHolding: { min: null, max: null },
+              dexPaid: false,
+              excludeKeywords: [],
+              holders: { min: null, max: null },
+              insiders: { min: null, max: null },
+              liquidity: { min: null, max: null },
+              marketCap: { min: null, max: null },
+              numBuys: { min: null, max: null },
+              numDevCreations: { min: null, max: null },
+              numDevMigrations: { min: null, max: null },
+              numSells: { min: null, max: null },
+              protocols: {
+                "Fourmeme V2": true,
+                "Binance": true,
+                "Uniswap V2": false,
+                "Uniswap V3": false,
+                "Uniswap V4": false
+              },
+              searchKeywords: [],
+              showQuoteTokens: {
+                wbnb: true,
+                bnb: true,
+                usdt: true,
+                usd1: true,
+                cake: true,
+                aster: true,
+                lisusd: true,
+                usdc: true
+              },
+              snipers: { min: null, max: null },
+              telegram: false,
+              top10Holders: { min: null, max: null },
+              tweetAgeMins: { min: null, max: null },
+              twitterExists: false,
+              twitterHandleReuses: { min: null, max: null },
+              txns: { min: null, max: null },
+              volume: { min: null, max: null },
+              website: false
+            }
+          }
+        },
+        {
+          name: "finalStretch",
+          body: {
+            table: "finalStretch",
+            filters: {
+              age: { min: null, max: null },
+              atLeastOneSocial: false,
+              bondingCurve: { min: null, max: null },
+              devHolding: { min: null, max: null },
+              dexPaid: false,
+              excludeKeywords: [],
+              holders: { min: null, max: null },
+              insiders: { min: null, max: null },
+              liquidity: { min: null, max: null },
+              marketCap: { min: null, max: null },
+              numBuys: { min: null, max: null },
+              numDevCreations: { min: null, max: null },
+              numDevMigrations: { min: null, max: null },
+              numSells: { min: null, max: null },
+              protocols: {
+                "Fourmeme V2": true,
+                "Binance": true,
+                "Uniswap V2": false,
+                "Uniswap V3": false,
+                "Uniswap V4": false
+              },
+              searchKeywords: [],
+              showQuoteTokens: {
+                wbnb: true,
+                bnb: true,
+                usdt: true,
+                usd1: true,
+                cake: true,
+                aster: true,
+                lisusd: true,
+                usdc: true
+              },
+              snipers: { min: null, max: null },
+              telegram: false,
+              top10Holders: { min: null, max: null },
+              tweetAgeMins: { min: null, max: null },
+              twitterExists: false,
+              twitterHandleReuses: { min: null, max: null },
+              txns: { min: null, max: null },
+              volume: { min: null, max: null },
+              website: false
+            }
+          }
+        },
+        {
+          name: "migrated",
+          body: {
+            table: "migrated",
             filters: {
               age: { min: null, max: null },
               atLeastOneSocial: false,
@@ -192,20 +290,38 @@ const aiTokenBnbCombinedController = {
         };
       });
 
-      // Filter untuk BNB: hanya filter devHoldsPercent = 0 (sama seperti Solana di frontend)
+      // Filter berdasarkan kriteria sama seperti Solana:
+      // 1. Top 10 Holders <= 20%
+      // 2. Total Holders >= 100
       const filteredData = transformedData.filter((token) => {
-        const devHoldsPercent = token.devHoldsPercent || 0;
-        // Filter hanya token dengan devHoldsPercent = 0
-        return devHoldsPercent === 0 || 
-               devHoldsPercent === null || 
-               devHoldsPercent === undefined ||
-               (typeof devHoldsPercent === 'number' && Math.abs(devHoldsPercent) < 0.0001);
+        // Check top10HoldersPercent
+        const top10Holders = token.top10HoldersPercent || 
+                            token.top10Holders || 
+                            0;
+        
+        // Check numHolders
+        const holders = token.numHolders || 
+                       token.holders || 
+                       0;
+        
+        // Filter: top10Holders <= 20% AND holders >= 100
+        return top10Holders <= 20 && holders >= 100;
+      });
+
+      // Sort berdasarkan waktu launch paling awal (terbaru di atas)
+      const sortedData = filteredData.sort((a, b) => {
+        // Ambil waktu launch (prioritaskan openTrading, fallback ke createdAt)
+        const timeA = new Date(a.openTrading || a.createdAt).getTime();
+        const timeB = new Date(b.openTrading || b.createdAt).getTime();
+        
+        // Sort descending (terbaru di atas)
+        return timeB - timeA;
       });
 
       // Return dengan format yang diharapkan: {status: "Success", data: [...]}
       return res.status(200).json({
         status: "Success",
-        data: filteredData
+        data: sortedData
       });
     } catch (error) {
       console.error("❌ Error in BNB combined data fetch:", error.message);
